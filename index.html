@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFRA MDU GPON CALC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1f2937, #111827);
+        }
+        .container {
+            max-width: 600px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #374151;
+            color: #f3f4f6;
+            border: 2px solid #4b5563;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #6ee7b7;
+        }
+        .result-box {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #374151;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #374151;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .nap-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            background-color: #111827;
+        }
+        .nap-table td {
+            padding: 8px;
+            text-align: center;
+            font-size: 0.875rem;
+            line-height: 1;
+            cursor: pointer;
+            border: 1px solid #374151;
+        }
+        .nap-table td:first-child {
+            text-align: right;
+            padding-right: 8px;
+            color: #d1d5db;
+        }
+        .nap-table td:last-child {
+            text-align: left;
+            padding-left: 8px;
+            font-weight: bold;
+        }
+        .nap-cell {
+            color: #6ee7b7;
+        }
+        .dio-cell {
+            color: #fcd34d;
+        }
+        .radio-options {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .radio-option-btn {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            border-radius: 0.5rem;
+            border: 2px solid #4b5563;
+            transition: all 0.2s ease-in-out;
+            color: #d1d5db;
+            text-align: center;
+        }
+        .radio-option-btn:hover {
+            background-color: #374151;
+        }
+        .radio-option input[type="radio"]:checked + .radio-option-btn {
+            background-color: #6ee7b7;
+            color: #1f2937;
+            border-color: #6ee7b7;
+        }
+        .tool-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition-colors: 0.2s;
+            background-color: #4b5563;
+            color: #d1d5db;
+        }
+        .tool-button-active {
+            background-color: #6ee7b7;
+            color: #1f2937;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #1f2937;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #374151;
+            position: relative;
+        }
+        .floor-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #374151;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid #4b5563;
+        }
+        .floor-control button {
+            background-color: transparent;
+            border: none;
+            color: #d1d5db;
+            padding: 0.25rem;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .floor-control button:hover {
+            color: #6ee7b7;
+            transform: scale(1.1);
+        }
+        .floor-value {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center min-h-screen p-4">
+
+    <main class="container mx-auto p-6 bg-gray-800 rounded-2xl shadow-lg border border-gray-700">
+
+        <h1 class="text-4xl font-bold text-center mb-6">INFRA MDU GPON CALC ⚙️</h1>
+        
+        <form id="calcForm">
+            <div id="inputs" class="space-y-4 mb-6">
+                <p class="text-center text-sm italic text-yellow-400 mb-4">
+                    💡 Lembre-se de perguntar se há apartamentos Duplex ou Triplex antes de realizar o cálculo.
+                </p>
+                <div class="input-group">
+                    <label for="aptsPerFloor">QTD de APTOS por andar:</label>
+                    <input type="number" id="aptsPerFloor" min="0" placeholder="Ex: 8">
+                </div>
+                <div class="input-group">
+                    <label for="habitableFloors">QTD de andares habitáveis:</label>
+                    <input type="number" id="habitableFloors" min="0" placeholder="Ex: 20">
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button type="submit" id="calculateBtn" class="w-full bg-teal-400 text-gray-900 font-bold py-3 rounded-lg shadow-lg hover:bg-teal-300 transition-colors">
+                    Calcular
+                </button>
+                <button type="button" id="infoBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-colors">
+                    ℹ️
+                </button>
+            </div>
+        </form>
+
+        <div id="results" class="result-box mt-8 hidden">
+            <h2 class="text-2xl font-bold mb-4 text-center">Resultados 📊</h2>
+
+            <div class="result-item">
+                <span class="font-medium">Total de APTOS:</span>
+                <span id="totalApts" class="text-xl font-bold text-gray-400">0</span>
+            </div>
+
+            <div class="result-item">
+                <span class="font-medium">QTD de HPs do projeto (~80%):</span>
+                <span id="hpProject" class="text-xl font-bold text-teal-400">0</span>
+            </div>
+            <div class="result-item">
+                <span class="font-medium">QTD de HPs construídos de imediato (~50%):</span>
+                <span id="hpImmediate" class="text-xl font-bold text-teal-400">0</span>
+            </div>
+            <div class="result-item">
+                <span class="font-medium">QTD de NAPs a serem instaladas (fase 1):</span>
+                <span id="naps" class="text-xl font-bold text-teal-400">0</span>
+            </div>
+            <div class="result-item">
+                <span class="font-medium">Total de NAPs (com expansão):</span>
+                <span id="napsExpansion" class="text-xl font-bold text-gray-400">0</span>
+            </div>
+
+            <div class="result-item flex-col items-start pt-4">
+                <h2 class="text-2xl font-bold mb-4 text-center">Simulação de Instalação dos Equipamentos 🏢</h2>
+                
+                <div class="flex items-start w-full gap-4">
+                    <div id="napPlacementTable" class="w-2/3"></div>
+                    <div class="w-1/3 flex flex-col items-center">
+                        
+                        <div class="w-full flex flex-col items-center mb-4">
+                            <label for="lowestFloorDisplay" class="font-bold mb-2">Andar mais baixo:</label>
+                            <div class="floor-control max-w-[120px]">
+                                <button type="button" id="floorDownBtn" aria-label="Diminuir andar">-</button>
+                                <span id="lowestFloorDisplay" class="floor-value">1</span>
+                                <button type="button" id="floorUpBtn" aria-label="Aumentar andar">+</button>
+                            </div>
+                        </div>
+
+                        <p class="text-sm italic text-gray-400 mb-2 text-center">Selecione o elemento e toque no espaço vazio correspondente ao andar para posicioná-lo. Toque novamente para remover.</p>
+                        
+                        <div class="flex-col gap-2 mb-4 w-full flex">
+                            <p class="text-sm text-center">NAPs Disponíveis: <span id="napsRemaining" class="font-bold text-teal-400">0</span></p>
+                            <button type="button" id="toolNAP" class="tool-button tool-button-active">NAP</button>
+                            <button type="button" id="toolDIO" class="tool-button">DIO</button>
+                            <button type="button" id="clearBtn" class="tool-button bg-red-500 hover:bg-red-400">Limpar 🗑️</button>
+                            <button type="button" id="captureBtn" class="tool-button bg-blue-500 hover:bg-blue-400 mt-2">Baixar Croqui 📸</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button id="resetAllBtn" class="mt-8 w-full bg-gray-700 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-gray-600 transition-colors">
+            Limpar Campos
+        </button>
+
+    </main>
+    
+    <footer class="mt-8 text-center text-gray-400 text-sm">
+        <p>Contato para sugestões e melhorias: <a href="https://wa.me/5519991556630" class="underline hover:text-teal-400">💬 Chamar no Whatsapp</a></p>
+    </footer>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4">Diretrizes de Cálculo 📜</h3>
+            <ul class="list-disc list-inside text-left mb-4 space-y-2 text-gray-300">
+                <li>O projeto deve atender a **80%** do total de apartamentos.</li>
+                <li>Será construído **50%** do total do projeto.</li>
+            </ul>
+            <button id="closeModalBtn" class="bg-teal-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-teal-300 transition-colors">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold text-red-400 mb-4">Erro ❌</h3>
+            <p id="errorModalMessage" class="mb-4 text-gray-300"></p>
+            <button id="closeErrorModalBtn" class="bg-teal-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-teal-300 transition-colors">
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <!-- html2canvas library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('calcForm');
+            const resultsDiv = document.getElementById('results');
+            const totalAptsEl = document.getElementById('totalApts');
+            const hpProjectEl = document.getElementById('hpProject');
+            const hpImmediateEl = document.getElementById('hpImmediate');
+            const napsEl = document.getElementById('naps');
+            const napsExpansionEl = document.getElementById('napsExpansion');
+            const napPlacementTableDiv = document.getElementById('napPlacementTable');
+            const toolNAPBtn = document.getElementById('toolNAP');
+            const toolDIOBtn = document.getElementById('toolDIO');
+            const clearBtn = document.getElementById('clearBtn');
+            const infoBtn = document.getElementById('infoBtn');
+            const infoModal = document.getElementById('infoModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const resetAllBtn = document.getElementById('resetAllBtn');
+            const errorModal = document.getElementById('errorModal');
+            const errorModalMessage = document.getElementById('errorModalMessage');
+            const closeErrorModalBtn = document.getElementById('closeErrorModalBtn');
+            const napsRemainingEl = document.getElementById('napsRemaining');
+            const lowestFloorDisplay = document.getElementById('lowestFloorDisplay');
+            const floorUpBtn = document.getElementById('floorUpBtn');
+            const floorDownBtn = document.getElementById('floorDownBtn');
+            const captureBtn = document.getElementById('captureBtn');
+
+            let selectedTool = 'NAP';
+            let napLimit = 0;
+            let currentNapCount = 0;
+            let lowestFloor = 1;
+            let topFloor = 0;
+            let habitableFloors = 0;
+
+            function updateNapDisplay() {
+                napsRemainingEl.textContent = napLimit - currentNapCount;
+            }
+
+            function renderInteractiveTable(lowestFloor, highestFloor) {
+                let html = '<table class="nap-table"><tbody>';
+                
+                for (let i = highestFloor; i >= lowestFloor; i--) {
+                    html += `<tr data-floor="${i}"><td class="w-[10%]">${i}º</td><td class="w-[90%]"></td></tr>`;
+                }
+
+                html += '</tbody></table>';
+                napPlacementTableDiv.innerHTML = html;
+            }
+
+            function updateToolButtons() {
+                toolNAPBtn.classList.remove('tool-button-active');
+                toolDIOBtn.classList.remove('tool-button-active');
+                if (selectedTool === 'NAP') {
+                    toolNAPBtn.classList.add('tool-button-active');
+                } else {
+                    toolDIOBtn.classList.add('tool-button-active');
+                }
+            }
+            
+            // Event listeners for floor control
+            floorUpBtn.addEventListener('click', () => {
+                if (topFloor === 0) return; // Prevent change if not calculated yet
+                lowestFloor++;
+                lowestFloorDisplay.textContent = lowestFloor;
+                renderInteractiveTable(lowestFloor, topFloor);
+            });
+
+            floorDownBtn.addEventListener('click', () => {
+                if (topFloor === 0) return;
+                lowestFloor--;
+                lowestFloorDisplay.textContent = lowestFloor;
+                renderInteractiveTable(lowestFloor, topFloor);
+            });
+
+            // Event listeners for tool selection
+            toolNAPBtn.addEventListener('click', () => {
+                selectedTool = 'NAP';
+                updateToolButtons();
+            });
+            toolDIOBtn.addEventListener('click', () => {
+                selectedTool = 'DIO';
+                updateToolButtons();
+            });
+
+            // Event listener for placing elements
+            napPlacementTableDiv.addEventListener('click', (event) => {
+                const targetCell = event.target.closest('td');
+                if (targetCell && targetCell.cellIndex === 1) {
+                    let currentElements = targetCell.textContent.split(' | ').filter(e => e !== '');
+
+                    if (!currentElements.includes(selectedTool) && selectedTool === 'NAP') {
+                        if (currentNapCount >= napLimit) {
+                            errorModalMessage.textContent = `A quantidade máxima de NAPs (${napLimit}) já foi atingida. Limpe a tabela ou remova um item para continuar.`;
+                            errorModal.classList.remove('hidden');
+                            return;
+                        }
+                        currentNapCount++;
+                    } else if (currentElements.includes(selectedTool) && selectedTool === 'NAP') {
+                        currentNapCount--;
+                    }
+                    
+                    if (currentElements.includes(selectedTool)) {
+                        currentElements = currentElements.filter(e => e !== selectedTool);
+                    } else {
+                        currentElements.push(selectedTool);
+                        currentElements.sort(); 
+                    }
+
+                    const newContent = currentElements.join(' | ');
+                    targetCell.textContent = newContent;
+
+                    targetCell.classList.remove('nap-cell', 'dio-cell');
+                    if (newContent.includes('NAP')) {
+                        targetCell.classList.add('nap-cell');
+                    }
+                    if (newContent.includes('DIO')) {
+                        targetCell.classList.add('dio-cell');
+                    }
+
+                    updateNapDisplay();
+                }
+            });
+
+            // Event listener for clearing the simulation table
+            clearBtn.addEventListener('click', () => {
+                const cells = napPlacementTableDiv.querySelectorAll('td');
+                cells.forEach(cell => {
+                    if (cell.cellIndex === 1) {
+                        cell.textContent = '';
+                        cell.classList.remove('nap-cell', 'dio-cell');
+                    }
+                });
+                currentNapCount = 0;
+                updateNapDisplay();
+            });
+
+            // Event listener for generating image and sharing
+            captureBtn.addEventListener('click', () => {
+                const tableElement = document.getElementById('napPlacementTable').querySelector('table');
+                if (!tableElement) {
+                    errorModalMessage.textContent = 'Nenhuma tabela para capturar. Por favor, faça um cálculo primeiro.';
+                    errorModal.classList.remove('hidden');
+                    return;
+                }
+
+                html2canvas(tableElement, {
+                    backgroundColor: '#111827'
+                }).then(canvas => {
+                    const fileName = 'simulacao-mdu.png';
+                    const title = 'Croqui MDU GPON';
+                    const text = 'Confira a simulação de instalação GPON que realizei!';
+
+                    // Check if the Web Share API is supported
+                    if (navigator.share) {
+                        canvas.toBlob(blob => {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            navigator.share({
+                                files: [file],
+                                title: title,
+                                text: text,
+                            }).catch((error) => console.log('Erro ao compartilhar:', error));
+                        });
+                    } else {
+                        // Fallback to download for unsupported browsers
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                    }
+                });
+            });
+
+            // Event listener for clearing all fields and hiding results
+            resetAllBtn.addEventListener('click', () => {
+                form.reset();
+                resultsDiv.classList.add('hidden');
+                totalAptsEl.textContent = '0';
+                hpProjectEl.textContent = '0';
+                hpImmediateEl.textContent = '0';
+                napsEl.textContent = '0';
+                napsExpansionEl.textContent = '0';
+                napLimit = 0;
+                currentNapCount = 0;
+                lowestFloor = 1;
+                topFloor = 0;
+                lowestFloorDisplay.textContent = lowestFloor;
+                updateNapDisplay();
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const aptsPerFloor = parseInt(document.getElementById('aptsPerFloor').value);
+                habitableFloors = parseInt(document.getElementById('habitableFloors').value);
+                
+                if (isNaN(aptsPerFloor) || isNaN(habitableFloors) || aptsPerFloor <= 0 || habitableFloors <= 0) {
+                    errorModalMessage.textContent = 'Por favor, preencha todos os campos com valores válidos e positivos.';
+                    errorModal.classList.remove('hidden');
+                    resultsDiv.classList.add('hidden');
+                    return;
+                }
+
+                const totalApartments = aptsPerFloor * habitableFloors;
+
+                // Cálculos
+                const totalHPsProject = Math.ceil(totalApartments * 0.8);
+                const totalHPsImmediate = Math.ceil(totalHPsProject * 0.5);
+                const totalNAPsImmediate = Math.ceil(totalHPsImmediate / 8);
+                const totalNAPsExpansion = Math.ceil(totalHPsProject / 8);
+
+                // Armazenar o limite para a simulação e resetar a contagem
+                napLimit = totalNAPsExpansion;
+                currentNapCount = 0;
+
+                // Definir o andar mais alto fixo para a simulação
+                lowestFloor = 1;
+                topFloor = lowestFloor + habitableFloors - 1;
+                lowestFloorDisplay.textContent = lowestFloor;
+
+                renderInteractiveTable(lowestFloor, topFloor);
+                
+                totalAptsEl.textContent = totalApartments;
+                hpProjectEl.textContent = totalHPsProject;
+                hpImmediateEl.textContent = totalHPsImmediate;
+                napsEl.textContent = `${totalNAPsImmediate} (${totalNAPsImmediate * 8} HPs)`;
+                napsExpansionEl.textContent = `${totalNAPsExpansion} (${totalNAPsExpansion * 8} HPs)`;
+                
+                updateNapDisplay();
+                resultsDiv.classList.remove('hidden');
+            });
+            
+            // Event listeners for info modal
+            infoBtn.addEventListener('click', () => {
+                infoModal.classList.remove('hidden');
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                infoModal.classList.add('hidden');
+            });
+            
+            // Event listener for error modal
+            closeErrorModalBtn.addEventListener('click', () => {
+                errorModal.classList.add('hidden');
+            });
+
+            updateToolButtons();
+        });
+    </script>
+</body>
+</html>
