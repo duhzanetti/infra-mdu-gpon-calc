@@ -63,7 +63,7 @@
             line-height: 1;
             cursor: pointer;
             border: 1px solid #374151;
-            user-select: none; /* Prevent text selection on long press */
+            user-select: none;
             position: relative;
         }
         .nap-table td:first-child {
@@ -95,7 +95,6 @@
             color: #1f2937;
         }
 
-        /* Modal styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -167,6 +166,10 @@
 
         <h1 class="text-4xl font-bold text-center mb-6">INFRA MDU GPON CALC ⚙️</h1>
         
+        <p class="text-sm italic text-gray-400 text-center mb-4">
+            Considere apenas andares com apartamentos
+        </p>
+
         <form id="calcForm">
             <div id="inputs" class="flex flex-col sm:flex-row gap-4 mb-6">
                 <div class="input-group flex-1">
@@ -347,7 +350,8 @@
                 lowestFloor: 1,
                 topFloor: 0,
                 pressTimer: null,
-                calculatedResults: {}
+                calculatedResults: {},
+                floorElements: {}
             };
 
             function handleNumericInput(inputEl, delta) {
@@ -375,7 +379,11 @@
                 let html = '<table class="nap-table"><tbody>';
                 
                 for (let i = appState.topFloor; i >= appState.lowestFloor; i--) {
-                    html += `<tr data-floor="${i}"><td class="w-[10%]">${i}º</td><td class="w-[90%]"></td></tr>`;
+                    const elements = appState.floorElements[i] || [];
+                    const content = elements.join(' | ');
+                    const napClass = elements.includes('NAP') ? 'nap-cell' : '';
+                    const dioClass = elements.includes('DIO') ? 'dio-cell' : '';
+                    html += `<tr data-floor="${i}"><td class="w-[10%]">${i}º</td><td class="w-[90%] ${napClass} ${dioClass}">${content}</td></tr>`;
                 }
 
                 html += '</tbody></table>';
@@ -410,7 +418,11 @@
             }
 
             function handleAdd(targetCell) {
-                let currentElements = targetCell.textContent.split(' | ').filter(e => e !== '');
+                const floor = parseInt(targetCell.closest('tr').dataset.floor, 10);
+                if (!appState.floorElements[floor]) {
+                    appState.floorElements[floor] = [];
+                }
+                let currentElements = appState.floorElements[floor];
                 if (appState.selectedTool === 'NAP') {
                     if (appState.currentNapCount >= appState.napLimit) {
                         showModal(`A quantidade máxima de NAPs (${appState.napLimit}) já foi atingida. Toque e segure para remover um item.`);
@@ -432,14 +444,20 @@
             }
 
             function handleRemove(targetCell) {
-                let currentElements = targetCell.textContent.split(' | ').filter(e => e !== '');
-                const lastElement = currentElements.pop();
-                if (lastElement === 'NAP') {
-                    appState.currentNapCount--;
+                const floor = parseInt(targetCell.closest('tr').dataset.floor, 10);
+                let currentElements = appState.floorElements[floor];
+                if (currentElements && currentElements.length > 0) {
+                    const lastElement = currentElements.pop();
+                    if (lastElement === 'NAP') {
+                        appState.currentNapCount--;
+                    }
+                    if (currentElements.length === 0) {
+                        delete appState.floorElements[floor];
+                    }
                 }
-                const newContent = currentElements.sort().join(' | ');
+                const newContent = (appState.floorElements[floor] || []).sort().join(' | ');
                 targetCell.textContent = newContent;
-                updateCellClasses(targetCell, currentElements);
+                updateCellClasses(targetCell, appState.floorElements[floor] || []);
                 updateUI();
                 targetCell.classList.add('pulse-animation');
                 setTimeout(() => targetCell.classList.remove('pulse-animation'), 500);
@@ -530,7 +548,6 @@
                 });
 
                 domElements.floorDownBtn.addEventListener('click', () => {
-                    if (appState.topFloor === 0) return;
                     appState.lowestFloor--;
                     renderInteractiveTable();
                     updateUI();
@@ -607,6 +624,7 @@
                     appState.currentNapCount = 0;
                     appState.lowestFloor = 1;
                     appState.topFloor = 0;
+                    appState.floorElements = {};
                     domElements.lowestFloorDisplay.textContent = appState.lowestFloor;
                     updateUI();
                 });
@@ -629,6 +647,7 @@
                     appState.currentNapCount = 0;
                     appState.lowestFloor = 1;
                     appState.topFloor = appState.lowestFloor + habitableFloors - 1;
+                    appState.floorElements = {};
 
                     renderInteractiveTable();
                     
@@ -655,4 +674,3 @@
     </script>
 </body>
 </html>
-
